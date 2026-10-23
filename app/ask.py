@@ -25,8 +25,15 @@ def ask(question: str) -> str:
     client = genai.Client(api_key=get_api_key())
     response = client.models.generate_content(model=MODEL, contents=question)
 
-    # TODO(第1回 演習): response.usage_metadata から
-    #   入力トークン数と出力トークン数を表示してみよう（Copilotに頼んでよい）
+    usage = response.usage_metadata
+    if usage is not None:
+        input_tokens = usage.prompt_token_count
+        output_tokens = usage.candidates_token_count
+        total_tokens = usage.total_token_count
+        print(
+            f"[tokens] input={input_tokens} output={output_tokens} "
+            f"total={total_tokens}"
+        )
 
     return response.text
 
