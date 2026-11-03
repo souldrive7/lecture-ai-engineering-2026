@@ -31,6 +31,8 @@
 
 用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) をColabのT4 GPUで実行した。用語集58語から作ったSFTデータ116件を、学習58件・検証58件に分け、13問（既知語5、言い換え4、未知質問4）で学習前後を比較した。
 
+実測値は [`glossary_result.json`](./glossary_result.json) にも保存した。
+
 | 指標 | 学習前 | 学習後 |
 |---|---:|---:|
 | format_rate | 15.4% | 92.3% |

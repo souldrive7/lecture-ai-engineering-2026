@@ -1,0 +1,27 @@
+{
+  "source": "Google Colab",
+  "gpu": "Tesla T4 15GB",
+  "method": "LoRA（量子化なし）",
+  "executed_training_myself": true,
+  "train_size": 58,
+  "valid_size": 58,
+  "evaluation_size": 13,
+  "evaluation_groups": {
+    "known": 5,
+    "paraphrase": 4,
+    "unknown": 4
+  },
+  "before": {
+    "format_rate": 0.15384615384615385,
+    "content_rate": 0.0,
+    "both_rate": 0.0,
+    "seconds": 42.1
+  },
+  "after": {
+    "format_rate": 0.9230769230769231,
+    "content_rate": 0.38461538461538464,
+    "both_rate": 0.38461538461538464,
+    "seconds": 58.7
+  },
+  "regressed": []
+}
