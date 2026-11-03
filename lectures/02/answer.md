@@ -27,4 +27,6 @@
 
 ### 発展レベルに向けた準備
 
-`scripts/make_sft_dataset.py` が用語集58語から2種類の質問を作り、[`glossary_sft.jsonl`](./glossary_sft.jsonl)として116行のmessages形式JSONLを生成した。評価用に、用語集にある語・言い換え・用語集にない質問を分けた[`glossary_eval.json`](./glossary_eval.json)も用意した。これは発展課題のデータ作成と評価設計の部分に相当する。ただし、用語集データでのLoRA再学習と学習前後の比較は、ローカル環境にGPUがないため未実施である。発展まで完了するには、このJSONLをColabのT4環境へアップロードして学習・評価を実行する必要がある。
+`scripts/make_sft_dataset.py` が用語集58語から2種類の質問を作り、[`glossary_sft.jsonl`](./glossary_sft.jsonl)として116行のmessages形式JSONLを生成した。評価用に、用語集にある語・言い換え・用語集にない質問を分けた[`glossary_eval.json`](./glossary_eval.json)も用意した。これは発展課題のデータ作成と評価設計の部分に相当する。
+
+用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) も作成した。T4 GPU（15GB）が割り当てられることは確認済みだが、Colabのブラウザ接続が切れたため、用語集データでの実学習と学習前後の実測値取得は未完了である。再接続後にこのノートブックを実行する。
