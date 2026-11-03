@@ -1,0 +1,13 @@
+timestamp_utc,model,question_id,repeat,elapsed_seconds,input_tokens,output_tokens,total_tokens,status
+2026-10-23T13:10:50.731764+00:00,gemini-3.5-flash-lite,lora,1,2.7037298160000773,7,551,558,ok
+2026-10-23T13:11:08.702874+00:00,gemini-3.5-flash-lite,lora,2,2.9708960240000124,7,544,551,ok
+2026-10-23T13:11:26.844670+00:00,gemini-3.5-flash-lite,lora,3,3.141551217999904,7,536,543,ok
+2026-10-23T13:11:44.092097+00:00,gemini-3.5-flash-lite,homework_levels,1,2.2468026750000263,21,412,433,ok
+2026-10-23T13:12:02.170168+00:00,gemini-3.5-flash-lite,homework_levels,2,3.0778195979999055,21,518,539,ok
+2026-10-23T13:12:24.402428+00:00,gemini-3.5-flash-lite,homework_levels,3,7.231987267000022,21,524,545,ok
+2026-10-23T13:12:40.396902+00:00,gemini-3.8-flash,lora,1,0.9942824290001226,,,,error (HTTP 503)
+2026-10-23T13:13:04.351899+00:00,gemini-3.8-flash,lora,2,8.954818216000149,,,,error (HTTP 503)
+2026-10-23T13:16:01.429862+00:00,gemini-3.8-flash,lora,3,162.0777771170001,7,787,1816,ok
+2026-10-23T14:09:42.381379+00:00,gemini-3.8-flash,homework_levels,1,118.81560197900035,,,,error (HTTP 504)
+2026-10-23T14:11:56.376511+00:00,gemini-3.8-flash,homework_levels,2,118.99491248800041,,,,error (HTTP 504)
+2026-10-23T14:14:10.367874+00:00,gemini-3.8-flash,homework_levels,3,118.99117114900037,,,,error (HTTP 504)
