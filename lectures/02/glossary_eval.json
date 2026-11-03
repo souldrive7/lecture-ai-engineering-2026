@@ -1,0 +1,22 @@
+{
+  "description": "第2回発展用。用語集にある語、言い換え、用語集にない質問を分けて評価する。正解の定義は data/glossary.json の term_id から参照する。",
+  "known": [
+    {"question": "LoRAとは何ですか？", "term_id": "lora", "needs_review": false},
+    {"question": "QLoRAについて簡単に説明してください。", "term_id": "qlora", "needs_review": false},
+    {"question": "AIエージェントとは何ですか？", "term_id": "ai-agent", "needs_review": false},
+    {"question": "Pydantic AIは何に使いますか？", "term_id": "pydantic-ai", "needs_review": false},
+    {"question": "MCPとは何ですか？", "term_id": "mcp", "needs_review": false}
+  ],
+  "paraphrase": [
+    {"question": "モデルを全部再学習せずに追加学習する方法は？", "term_id": "lora", "needs_review": false},
+    {"question": "量子化とLoRAを組み合わせた手法を教えてください。", "term_id": "qlora", "needs_review": false},
+    {"question": "ツールを使って仕事を進めるLLMベースの仕組みは？", "term_id": "ai-agent", "needs_review": false},
+    {"question": "AIモデルに外部ツールを接続する共通プロトコルは？", "term_id": "mcp", "needs_review": false}
+  ],
+  "unknown": [
+    {"question": "この講座の最終成績はいつ発表されますか？", "needs_review": true},
+    {"question": "担当教員の電話番号を教えてください。", "needs_review": true},
+    {"question": "来月の講義は休講になりますか？", "needs_review": true},
+    {"question": "この講座を修了すると資格がもらえますか？", "needs_review": true}
+  ]
+}
