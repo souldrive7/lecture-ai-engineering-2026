@@ -46,3 +46,22 @@ def test_default_question_of_lecture1_is_answerable_from_glossary():
     assert "3レベル" in DEFAULT_QUESTION
     hits = json.loads(tools.search_glossary("3レベル"))
     assert hits[0]["term"] == "宿題の3レベル"
+
+
+def test_save_learning_log_writes_markdown(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LEARNING_LOG_DIR", tmp_path)
+
+    result = tools.save_learning_log("承認付きツール", "保存前に利用者の確認を挟む。")
+
+    assert "学習記録を learning_log/" in result
+    files = list(tmp_path.glob("*.md"))
+    assert len(files) == 1
+    assert files[0].read_text(encoding="utf-8") == "# 承認付きツール\n\n保存前に利用者の確認を挟む。\n"
+
+
+def test_save_learning_log_rejects_empty_fields(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LEARNING_LOG_DIR", tmp_path)
+
+    assert "topic は空" in tools.save_learning_log("", "本文")
+    assert "reflection は空" in tools.save_learning_log("題名", "")
+    assert not list(tmp_path.iterdir())

@@ -16,7 +16,7 @@ import inspect
 import json
 from pathlib import Path
 
-from pydantic_ai import Agent
+from pydantic_ai import Agent, DeferredToolRequests, DeferredToolResults
 from pydantic_ai.exceptions import ModelHTTPError
 from fastmcp import Client
 from pydantic_ai.mcp import MCPToolset, StdioTransport
@@ -37,10 +37,13 @@ INSTRUCTIONS = """\
 - 宿題の答えそのものは書かず、考え方のヒントで導く。
 """
 
-# モデルは実行時に渡す（テストではAPIを呼ばない TestModel に差し替えるため）
-agent = Agent(instructions=INSTRUCTIONS)
+# モデルは実行時に渡す（テストではAPIを呼ばない TestModel に差し替えるため）。
+# 保存ツールは承認待ちで一度返るため、通常の回答（str）と DeferredToolRequests の
+# どちらもエージェントの出力として受け取れるようにする。
+agent = Agent(instructions=INSTRUCTIONS, output_type=[str, DeferredToolRequests])
 agent.tool_plain(tools.search_glossary)
 agent.tool_plain(tools.get_lecture_summary)
+agent.tool_plain(tools.save_learning_log, requires_approval=True)
 
 # TODO(第3回 演習): tools.py に make_quiz を作り、ここで登録しよう
 
@@ -73,7 +76,11 @@ def load_mcp_servers(config_path: Path = MCP_CONFIG) -> list[MCPToolset]:
 
 def build_mcp_agent(config_path: Path = MCP_CONFIG) -> Agent:
     """第5回: 関数を直接登録する代わりに、MCP サーバーが公開するツールを使うエージェント。INSTRUCTIONS は同じ。"""
-    return Agent(instructions=INSTRUCTIONS, toolsets=load_mcp_servers(config_path))
+    return Agent(
+        instructions=INSTRUCTIONS,
+        output_type=[str, DeferredToolRequests],
+        toolsets=load_mcp_servers(config_path),
+    )
 
 
 def build_model() -> GoogleModel:
@@ -109,6 +116,35 @@ def print_trace(result) -> None:
     print(f"[usage] {result.usage}")
 
 
+def approve_deferred_tools(requests: DeferredToolRequests) -> DeferredToolResults:
+    """DeferredToolRequests の承認待ちツールについて、利用者の確認結果を作る。"""
+    approvals: dict[str, bool] = {}
+    for call in requests.approvals:
+        print(f"\n保存ツールの実行確認: {call.args}")
+        answer = input("この学習記録を保存しますか？ [y/N] ").strip().lower()
+        approvals[call.tool_call_id] = answer in {"y", "yes"}
+
+    if requests.calls:
+        names = ", ".join(call.tool_name for call in requests.calls)
+        raise RuntimeError(f"外部実行が必要な未対応ツールがあります: {names}")
+    return requests.build_results(approvals=approvals)
+
+
+def run_with_approval(target: Agent, question: str, model: GoogleModel):
+    """承認待ちが返ったら確認し、同じ会話を承認結果付きで再開する。"""
+    result = target.run_sync(question, model=model)
+    while isinstance(result.output, DeferredToolRequests):
+        deferred = result.output
+        results = approve_deferred_tools(deferred)
+        result = target.run_sync(
+            None,
+            model=model,
+            message_history=result.all_messages(),
+            deferred_tool_results=results,
+        )
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="学習支援エージェントに質問する")
     parser.add_argument("question", nargs="?")
@@ -128,7 +164,7 @@ def main() -> None:
     if args.mcp:
         print("[tools] MCP サーバー（app/mcp_servers.json）")
     try:
-        result = target.run_sync(args.question, model=build_model())
+        result = run_with_approval(target, args.question, build_model())
     except ModelHTTPError as e:
         print(api_error_message(e.status_code, str(e.body)[:200]))
         raise SystemExit(1)

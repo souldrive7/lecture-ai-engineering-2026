@@ -5,10 +5,13 @@
 """
 
 import json
+import re
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+LEARNING_LOG_DIR = Path(__file__).resolve().parent.parent / "learning_log"
 MAX_RESULTS = 3
 
 
@@ -77,3 +80,25 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+
+
+def save_learning_log(topic: str, reflection: str) -> str:
+    """学習した内容を Markdown の記録として learning_log/ に保存する。
+
+    学習内容を振り返った後、その記録を残したいときに使う。topic は記録の題名、
+    reflection は学んだこと・気づき・疑問を含む本文にする。ファイルの保存は利用者の
+    確認後に実行されるため、このツールを呼ぶ前に保存してよいか確認すること。
+    """
+    topic = topic.strip()
+    reflection = reflection.strip()
+    if not topic:
+        return "学習記録を保存できませんでした。topic は空にできません。"
+    if not reflection:
+        return "学習記録を保存できませんでした。reflection は空にできません。"
+
+    slug = re.sub(r"[^\w.-]+", "-", topic, flags=re.UNICODE).strip("-._")[:40]
+    filename = f"{datetime.now():%Y%m%d-%H%M%S-%f}_{slug or 'learning-log'}.md"
+    path = LEARNING_LOG_DIR / filename
+    LEARNING_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"# {topic}\n\n{reflection}\n", encoding="utf-8")
+    return f"学習記録を learning_log/{path.name} に保存しました。"
