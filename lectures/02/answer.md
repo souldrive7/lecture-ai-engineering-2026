@@ -13,7 +13,7 @@
 
 ## 宿題
 
-- 取り組んだレベル：実装（完了）
+- 取り組んだレベル：発展（完了）
 - 変えた設定やデータ：架空の講座FAQを5項目に置き換え、根拠ありの質問15問とFAQにない質問6問を用意した。未知質問には `needs_review: true` と確認文を正解として設定した。
 - 結果（比較表や数字）：
 
@@ -25,13 +25,11 @@
 
 - ファインチューニングが向く場面・向かない場面についての考察：出力形式、定型表現、回答の文体を揃える用途には向く。一方、学習データにない情報を検索したり、未知情報を正しく「確認が必要」と判断したりする用途には単独では向かない。用語集検索のような外部知識・根拠を参照する仕組みと組み合わせる必要がある。
 
-### 発展レベルに向けた準備
+### 発展課題の実施記録
 
-`scripts/make_sft_dataset.py` が用語集58語から2種類の質問を作り、[`glossary_sft.jsonl`](./glossary_sft.jsonl)として116行のmessages形式JSONLを生成した。評価用に、用語集にある語・言い換え・用語集にない質問を分けた[`glossary_eval.json`](./glossary_eval.json)も用意した。これは発展課題のデータ作成と評価設計の部分に相当する。
+`scripts/make_sft_dataset.py` が用語集58語から2種類の質問を作り、[`glossary_sft.jsonl`](./glossary_sft.jsonl)として116行のmessages形式JSONLを生成した。評価用に、用語集にある語・言い換え・用語集にない質問を分けた[`glossary_eval.json`](./glossary_eval.json)も用意した。発展課題で指定されたデータ作成と評価設計を実施した。
 
-用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) をColabのT4 GPUで実行した。用語集58語から作ったSFTデータ116件を、学習58件・検証58件に分け、13問（既知語5、言い換え4、未知質問4）で学習前後を比較した。
-
-実測値は [`glossary_result.json`](./glossary_result.json) にも保存した。
+用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) をColabのT4 GPUで実行した。用語集58語から作ったSFTデータ116件を、学習58件・検証58件に分け、13問（既知語5、言い換え4、未知質問4）で学習前後を比較した。`executed_training_myself: true` と実測値を [`glossary_result.json`](./glossary_result.json) に保存した。
 
 | 指標 | 学習前 | 学習後 |
 |---|---:|---:|
