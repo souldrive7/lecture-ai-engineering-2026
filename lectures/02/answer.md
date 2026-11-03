@@ -29,4 +29,13 @@
 
 `scripts/make_sft_dataset.py` が用語集58語から2種類の質問を作り、[`glossary_sft.jsonl`](./glossary_sft.jsonl)として116行のmessages形式JSONLを生成した。評価用に、用語集にある語・言い換え・用語集にない質問を分けた[`glossary_eval.json`](./glossary_eval.json)も用意した。これは発展課題のデータ作成と評価設計の部分に相当する。
 
-用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) も作成した。T4 GPU（15GB）が割り当てられることは確認済みだが、Colabのブラウザ接続が切れたため、用語集データでの実学習と学習前後の実測値取得は未完了である。再接続後にこのノートブックを実行する。
+用語集版の学習・比較用ノートブック [`glossary_lora_tuning.ipynb`](../../notebooks/glossary_lora_tuning.ipynb) をColabのT4 GPUで実行した。用語集58語から作ったSFTデータ116件を、学習58件・検証58件に分け、13問（既知語5、言い換え4、未知質問4）で学習前後を比較した。
+
+| 指標 | 学習前 | 学習後 |
+|---|---:|---:|
+| format_rate | 15.4% | 92.3% |
+| content_rate | 0.0% | 38.5% |
+| both_rate | 0.0% | 38.5% |
+| 評価時間 | 42.1秒 | 58.7秒 |
+
+学習後はJSON形式の遵守率が大きく向上した。一方、内容正解率は38.5%にとどまり、用語集の定義を正確に返すことや、未知質問を確認要求へ回す判断には失敗が残った。今回の小規模データでは、LoRAが回答形式の整形には効いたが、知識の正確な想起と未知判定を十分には保証しないことが確認できた。退行リストは空で、`executed_training_myself: true` である。
