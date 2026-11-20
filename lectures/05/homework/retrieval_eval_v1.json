@@ -1,0 +1,357 @@
+[
+  {
+    "id": "Q1",
+    "kind": "単一ページ",
+    "question": "第2回の説明では、LoRAは何を固定し何を学習しますか？ QLoRAは何を加えますか？",
+    "gold": [
+      [
+        "lec02-main-p052"
+      ]
+    ],
+    "gold_vector_rank": {
+      "lec02-main-p052": 1
+    },
+    "query_terms": [
+      "LoRA",
+      "QLoRA"
+    ],
+    "hybrid_reasons": {
+      "lec02-main-p052": [
+        "vector#1",
+        "same_section(p.51)",
+        "next_page(p.51)"
+      ],
+      "lec02-main-p051": [
+        "vector#2",
+        "same_section(p.52)",
+        "next_page(p.52)"
+      ],
+      "lec02-main-p060": [
+        "vector#3",
+        "same_section(p.52)",
+        "same_section(p.51)"
+      ],
+      "lec02-main-p061": [
+        "vector#4",
+        "same_section(p.52)",
+        "same_section(p.51)"
+      ],
+      "lec02-main-p047": [
+        "vector#5",
+        "same_section(p.52)",
+        "same_section(p.51)"
+      ],
+      "lec02-main-p054": [
+        "same_section(p.52)",
+        "same_section(p.51)",
+        "same_section(p.60)"
+      ],
+      "lec02-main-p046": [
+        "same_section(p.52)",
+        "same_section(p.51)",
+        "same_section(p.60)"
+      ],
+      "lec02-main-p053": [
+        "same_section(p.52)",
+        "next_page(p.52)",
+        "same_section(p.51)"
+      ]
+    },
+    "results": [
+      {
+        "method": "vector(top5)",
+        "pages": 5,
+        "full_text_pages": 5,
+        "gold_in_full_text": 1,
+        "gold_shown": 1,
+        "gold_total": 1,
+        "chars_to_model": 4242,
+        "page_ids": [
+          "lec02-main-p052",
+          "lec02-main-p051",
+          "lec02-main-p060",
+          "lec02-main-p061",
+          "lec02-main-p047"
+        ]
+      },
+      {
+        "method": "graph",
+        "pages": 10,
+        "full_text_pages": 10,
+        "gold_in_full_text": 1,
+        "gold_shown": 1,
+        "gold_total": 1,
+        "chars_to_model": 9245,
+        "page_ids": [
+          "lec02-main-p052",
+          "lec02-main-p051",
+          "lec02-main-p060",
+          "lec02-main-p053",
+          "lec02-main-p050",
+          "lec02-main-p059",
+          "lec02-main-p061",
+          "lec02-main-p049",
+          "lec02-main-p062",
+          "lec02-main-p047"
+        ]
+      },
+      {
+        "method": "hybrid",
+        "pages": 8,
+        "full_text_pages": 3,
+        "gold_in_full_text": 1,
+        "gold_shown": 1,
+        "gold_total": 1,
+        "chars_to_model": 4223,
+        "page_ids": [
+          "lec02-main-p052",
+          "lec02-main-p051",
+          "lec02-main-p060",
+          "lec02-main-p061",
+          "lec02-main-p047",
+          "lec02-main-p054",
+          "lec02-main-p046",
+          "lec02-main-p053"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "Q2",
+    "kind": "章をまたぐ",
+    "question": "第3回の例では、コンパクションとセッションをまたぐメモリはどう違いますか。日々のメモはすべて長期メモリに入りますか",
+    "gold": [
+      [
+        "lec03-main-p013"
+      ],
+      [
+        "lec03-main-p039"
+      ],
+      [
+        "lec03-main-p040"
+      ]
+    ],
+    "gold_vector_rank": {
+      "lec03-main-p013": 5,
+      "lec03-main-p039": 2,
+      "lec03-main-p040": 4
+    },
+    "query_terms": [
+      "メモリ"
+    ],
+    "hybrid_reasons": {
+      "lec03-main-p065": [
+        "vector#1",
+        "term(メモリ)"
+      ],
+      "lec03-main-p039": [
+        "vector#2",
+        "same_section(p.38)",
+        "next_page(p.38)"
+      ],
+      "lec03-main-p038": [
+        "vector#3",
+        "same_section(p.39)",
+        "next_page(p.39)"
+      ],
+      "lec03-main-p040": [
+        "vector#4",
+        "same_section(p.39)",
+        "next_page(p.39)"
+      ],
+      "lec03-main-p013": [
+        "vector#5",
+        "term(メモリ)"
+      ],
+      "lec03-main-p041": [
+        "same_section(p.39)",
+        "same_section(p.38)",
+        "same_section(p.40)"
+      ],
+      "lec03-main-p037": [
+        "same_section(p.39)",
+        "same_section(p.38)",
+        "next_page(p.38)"
+      ],
+      "lec03-main-p008": [
+        "same_section(p.13)"
+      ]
+    },
+    "results": [
+      {
+        "method": "vector(top5)",
+        "pages": 5,
+        "full_text_pages": 5,
+        "gold_in_full_text": 3,
+        "gold_shown": 3,
+        "gold_total": 3,
+        "chars_to_model": 3574,
+        "page_ids": [
+          "lec03-main-p065",
+          "lec03-main-p039",
+          "lec03-main-p038",
+          "lec03-main-p040",
+          "lec03-main-p013"
+        ]
+      },
+      {
+        "method": "graph",
+        "pages": 10,
+        "full_text_pages": 10,
+        "gold_in_full_text": 2,
+        "gold_shown": 2,
+        "gold_total": 3,
+        "chars_to_model": 9281,
+        "page_ids": [
+          "lec03-main-p065",
+          "lec03-main-p039",
+          "lec03-main-p038",
+          "lec03-main-p064",
+          "lec03-main-p066",
+          "lec03-main-p040",
+          "lec03-main-p037",
+          "lec03-main-p063",
+          "lec03-main-p067",
+          "lec03-main-p041"
+        ]
+      },
+      {
+        "method": "hybrid",
+        "pages": 8,
+        "full_text_pages": 3,
+        "gold_in_full_text": 1,
+        "gold_shown": 3,
+        "gold_total": 3,
+        "chars_to_model": 3777,
+        "page_ids": [
+          "lec03-main-p065",
+          "lec03-main-p039",
+          "lec03-main-p038",
+          "lec03-main-p040",
+          "lec03-main-p013",
+          "lec03-main-p041",
+          "lec03-main-p037",
+          "lec03-main-p008"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "Q3",
+    "kind": "回をまたぐ",
+    "question": "第1回の例題チャットボットはなぜRAGで作るのですか。第2回では、知識の追加にファインチューニングよりRAGが効きやすい根拠をどう説明していますか",
+    "gold": [
+      [
+        "lec01-main-p049",
+        "lec01-main-p019"
+      ],
+      [
+        "lec02-main-p047"
+      ]
+    ],
+    "gold_vector_rank": {
+      "lec01-main-p049": 1,
+      "lec01-main-p019": 3,
+      "lec02-main-p047": 5
+    },
+    "query_terms": [
+      "ファインチューニング",
+      "RAG"
+    ],
+    "hybrid_reasons": {
+      "lec01-main-p049": [
+        "vector#1",
+        "term(RAG)"
+      ],
+      "lec02-main-p003": [
+        "vector#2",
+        "term(RAG)"
+      ],
+      "lec01-main-p019": [
+        "vector#3",
+        "term(RAG)"
+      ],
+      "lec02-main-p053": [
+        "vector#4",
+        "same_section(p.47)",
+        "term(ファインチューニング)"
+      ],
+      "lec02-main-p047": [
+        "vector#5",
+        "same_section(p.53)",
+        "term(ファインチューニング)"
+      ],
+      "lec02-main-p027": [
+        "term(ファインチューニング)",
+        "term(RAG)"
+      ],
+      "lec02-main-p046": [
+        "same_section(p.53)",
+        "same_section(p.47)",
+        "next_page(p.47)"
+      ],
+      "lec02-main-p013": [
+        "term(ファインチューニング)",
+        "term(RAG)"
+      ]
+    },
+    "results": [
+      {
+        "method": "vector(top5)",
+        "pages": 5,
+        "full_text_pages": 5,
+        "gold_in_full_text": 2,
+        "gold_shown": 2,
+        "gold_total": 2,
+        "chars_to_model": 4144,
+        "page_ids": [
+          "lec01-main-p049",
+          "lec02-main-p003",
+          "lec01-main-p019",
+          "lec02-main-p053",
+          "lec02-main-p047"
+        ]
+      },
+      {
+        "method": "graph",
+        "pages": 10,
+        "full_text_pages": 10,
+        "gold_in_full_text": 1,
+        "gold_shown": 1,
+        "gold_total": 2,
+        "chars_to_model": 8004,
+        "page_ids": [
+          "lec01-main-p049",
+          "lec02-main-p003",
+          "lec01-main-p019",
+          "lec01-main-p048",
+          "lec01-main-p050",
+          "lec02-main-p002",
+          "lec02-main-p004",
+          "lec01-main-p018",
+          "lec01-main-p020",
+          "lec01-main-p047"
+        ]
+      },
+      {
+        "method": "hybrid",
+        "pages": 8,
+        "full_text_pages": 3,
+        "gold_in_full_text": 1,
+        "gold_shown": 2,
+        "gold_total": 2,
+        "chars_to_model": 3949,
+        "page_ids": [
+          "lec01-main-p049",
+          "lec02-main-p003",
+          "lec01-main-p019",
+          "lec02-main-p053",
+          "lec02-main-p047",
+          "lec02-main-p027",
+          "lec02-main-p046",
+          "lec02-main-p013"
+        ]
+      }
+    ]
+  }
+]
