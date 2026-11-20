@@ -1,0 +1,25 @@
+$ uv run python -m app.agent --hybrid --trace 第2回の説明では、LoRAは何を固定し何を学習しますか？ QLoRAは何を加えますか？
+[model] gemini-3.5-flash-lite
+第2回の資料によると、LoRAとQLoRAの仕組みについて以下のように説明されています。
+
+* **LoRA**
+  * **何を固定するか**：元の重み（本体）を固定して学習しません（第2回・PDF p.52）
+  * **何を学習するか**：小さな「差分」である、細長い2つの行列の積（低ランクの追加行列）を学習します（第2回・PDF p.51, p.52）
+
+* **QLoRA**
+  * **何を（何に）加えるか**：LoRAの手法に加えて、元の重みを**4bitに圧縮**します（第2回・PDF p.51, p.52）
+
+--- trace ---
+[tool call]   search_hybrid({'query': 'LoRA 固定 学習 QLoRA 加える'})
+[tool return] search_hybrid 用語['LoRA', 'QLoRA'] 候補19件から:
+    - 第2回 p.52 [全文] 距離0.219 ['vector#1', 'same_section(p.51)', 'next_page(p.51)'] LoRA と QLoRA ：大きなモデルも GPU 1 台で
+    - 第2回 p.51 [全文] 距離0.238 ['vector#2', 'same_section(p.52)', 'next_page(p.52)'] PEFT ：モデル全体ではなく、一部だけを学習する
+    - 第2回 p.60 [全文] 距離0.261 ['vector#3', 'same_section(p.52)', 'same_section(p.51)'] 今日の演習： QLoRA で出力形式を矯正し、効果を測る
+    - 第2回 p.47 [全文] 距離0.284 ['vector#4', 'same_section(p.52)', 'same_section(p.51)'] 根拠と諸説：知識の追加は RAG が効きやすい
+    - 第2回 p.61 [全文] 距離0.287 ['vector#5', 'same_section(p.52)', 'same_section(p.51)'] 演習の進め方と提出物（仮）
+    - 第2回 p.54 [先頭文] 距離0.298 ['same_section(p.52)', 'same_section(p.51)', 'same_section(p.60)'] 手本データの作り方：質問と、理想の回答の組を用意する
+    - 第2回 p.58 [先頭文] 距離0.306 ['same_section(p.52)', 'same_section(p.51)', 'same_section(p.60)'] Fine-Tuning する前のチェックリスト
+    - 第2回 p.46 [先頭文] 距離0.307 ['same_section(p.52)', 'same_section(p.51)', 'same_section(p.60)'] 小規模な FT は振る舞いに強く、知識の追加は苦手
+[time] 回答完了まで 8.59 秒（検索・埋め込みを含む）
+[usage] 入力 4,118 tokens / 出力 184 tokens / モデル応答 2 回
+[cost] 生成APIの推定コスト: $0.001695 USD（埋め込み・索引構築分は含まない）

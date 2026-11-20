@@ -18,6 +18,7 @@ from app.config import (
     EMBEDDING_DIMENSIONS, EMBEDDING_MAX_TOKENS, EMBEDDING_MODEL,
     RAG_DB, RAG_DOCUMENT_IDS, RAG_SOURCE, RAG_TOP_K, RAG_TREE, get_api_key,
     RAG_GRAPH, GRAPH_START_K, GRAPH_HOPS, GRAPH_MAX_RESULTS,
+    HYBRID_SEED_K, HYBRID_MAX_RESULTS, HYBRID_FULL_K, READ_PAGES_MAX,
 )
 
 
@@ -49,6 +50,11 @@ def load_pages(source: Path = RAG_SOURCE) -> list[dict]:
     return pages
 
 
+def first_sentence(text: str) -> str:
+    """本文の先頭文を返す。句点がなければ先頭行を返す。"""
+    return re.split(r"(?<=[。！？])|\n", text.strip(), maxsplit=1)[0]
+
+
 def browse_tree(node_id: str | None = None) -> dict:
     """直下のページは先頭文、指定したページ自身は全文を返す。"""
     tree = json.loads(RAG_TREE.read_text(encoding="utf-8"))
@@ -61,7 +67,7 @@ def browse_tree(node_id: str | None = None) -> dict:
         if node["kind"] == "page":
             info.update({key: value for key, value in pages[node["id"]].items() if key != "page_id"})
             if not full:
-                info["content"] = re.split(r"(?<=[。！？])|\n", info["content"].strip(), maxsplit=1)[0]
+                info["content"] = first_sentence(info["content"])
         return info
 
     remaining = [tree]
@@ -124,18 +130,35 @@ def open_index(path: Path):
         db.close()
 
 
+def _nearest(db, vector: list[float], limit: int) -> list[dict]:
+    """埋め込み済みの質問ベクトルに近いページを、距離の昇順で最大limit件返す。"""
+    rows = db.execute("""
+        SELECT page_id, document_id, lecture, document_title, section, title, page, content,
+               vec_distance_cosine(embedding, ?) AS distance
+        FROM chunks ORDER BY distance, page_id LIMIT ?
+    """, (sqlite_vec.serialize_float32(vector), limit))
+    return [dict(row) for row in rows]
+
+
+def _distances(db, vector: list[float], page_ids: list[str]) -> dict[str, float]:
+    """指定したページだけ、保存済みの埋め込みと質問ベクトルの距離を返す（API呼び出しなし）。"""
+    if not page_ids:
+        return {}
+    marks = ", ".join("?" for _ in page_ids)
+    rows = db.execute(f"""
+        SELECT page_id, vec_distance_cosine(embedding, ?) AS distance
+        FROM chunks WHERE page_id IN ({marks})
+    """, (sqlite_vec.serialize_float32(vector), *page_ids))
+    return {row["page_id"]: row["distance"] for row in rows}
+
+
 def search(query: str) -> list[dict]:
     """質問を埋め込み、近いページを最大RAG_TOP_K件返す。"""
     if not isinstance(query, str) or not query.strip():
         raise ValueError("検索語が空です。")
     with open_index(RAG_DB) as db:
         vector = embed_text(query.strip(), "RETRIEVAL_QUERY")
-        rows = db.execute("""
-            SELECT page_id, document_id, lecture, document_title, section, title, page, content,
-                   vec_distance_cosine(embedding, ?) AS distance
-            FROM chunks ORDER BY distance, page_id LIMIT ?
-        """, (sqlite_vec.serialize_float32(vector), RAG_TOP_K))
-        return [dict(row) for row in rows]
+        return _nearest(db, vector, RAG_TOP_K)
 
 
 def search_graph(query: str) -> dict:
@@ -185,6 +208,100 @@ def search_graph(query: str) -> dict:
             "max_hops": GRAPH_HOPS}
 
 
+# ---- 第5回 宿題（発展）: Tree × Graph のハイブリッド取得 ----------------------------
+# 1) ベクトル検索の上位を入口にする
+# 2) 構造の関係で候補を広げる（Tree: 同じ章 / Graph: 前後ページ・質問に出る用語を言及するページ）
+# 3) 候補を、索引に保存済みのページ埋め込みと質問の距離で並べ直す（追加のAPI呼び出しなし）
+# 4) 上位HYBRID_FULL_K件だけ全文、残りは先頭文と「選ばれた理由」。続きはread_pagesで読む
+
+
+def _normalize_term(text: str) -> str:
+    return re.sub(r"\s+", "", text).casefold()
+
+
+def query_terms(query: str, graph: dict) -> list[dict]:
+    """graph.jsonの用語ノードのうち、名前か別名が質問文に出てくるものを返す。"""
+    normalized = _normalize_term(query)
+    found = []
+    for node in graph["nodes"]:
+        if node["kind"] != "term":
+            continue
+        names = {_normalize_term(name) for name in [node["title"], *node.get("aliases", [])]}
+        if any(len(name) >= 2 and name in normalized for name in names):
+            found.append({"id": node["id"], "title": node["title"]})
+    return found
+
+
+def search_hybrid(query: str) -> dict:
+    """入口をベクトル検索で選び、章・前後ページ・用語で広げ、保存済み埋め込みで絞って返す。"""
+    if not isinstance(query, str) or not query.strip():
+        raise ValueError("検索語が空です。")
+    pages = {page["page_id"]: page for page in load_pages(RAG_SOURCE)}
+    graph = json.loads(RAG_GRAPH.read_text(encoding="utf-8"))
+    next_pages, mentioned_by = defaultdict(set), defaultdict(set)
+    for edge in graph["edges"]:
+        a, b = edge["source"], edge["target"]
+        if edge["relation"] == "next_page" and a in pages and b in pages:
+            next_pages[a].add(b)
+            next_pages[b].add(a)
+        elif edge["relation"] == "mentions" and a in pages:
+            mentioned_by[b].add(a)
+    sections = defaultdict(list)
+    for page_id, page in pages.items():
+        sections[(page["document_id"], page["section"])].append(page_id)
+    terms = query_terms(query, graph)
+
+    with open_index(RAG_DB) as db:
+        vector = embed_text(query.strip(), "RETRIEVAL_QUERY")
+        seeds = [hit for hit in _nearest(db, vector, HYBRID_SEED_K) if hit["page_id"] in pages]
+        reasons = defaultdict(list)
+        for rank, seed in enumerate(seeds, 1):
+            reasons[seed["page_id"]].append(f"vector#{rank}")
+        for seed in seeds:
+            root = seed["page_id"]
+            for page_id in sections[(seed["document_id"], seed["section"])]:
+                if page_id != root:
+                    reasons[page_id].append(f"same_section(p.{seed['page']})")
+            for page_id in sorted(next_pages[root]):
+                reasons[page_id].append(f"next_page(p.{seed['page']})")
+        for term in terms:
+            for page_id in sorted(mentioned_by[term["id"]]):
+                reasons[page_id].append(f"term({term['title']})")
+        distances = _distances(db, vector, sorted(reasons))
+
+    ranked = sorted(reasons, key=lambda page_id: (distances[page_id], page_id))[:HYBRID_MAX_RESULTS]
+    results = []
+    for rank, page_id in enumerate(ranked):
+        page = pages[page_id]
+        item = {key: page[key] for key in ("page_id", "lecture", "document_title", "section", "title", "page")}
+        item["distance"] = distances[page_id]
+        item["reasons"] = list(dict.fromkeys(reasons[page_id]))[:3]
+        if rank < HYBRID_FULL_K:
+            item["content"] = page["content"]
+        else:
+            item["preview"] = first_sentence(page["content"])
+        results.append(item)
+    return {"query_terms": [term["title"] for term in terms],
+            "candidates_considered": len(reasons), "full_text": min(HYBRID_FULL_K, len(results)),
+            "results": results}
+
+
+def read_pages(page_ids: list[str]) -> list[dict]:
+    """第1〜3回の本講義から、指定したページ（最大READ_PAGES_MAX件）の本文と引用情報を返す。"""
+    if isinstance(page_ids, str):
+        page_ids = [page_ids]
+    page_ids = list(dict.fromkeys(page_ids))
+    if not page_ids:
+        raise ValueError("ページIDを1つ以上指定してください。")
+    if len(page_ids) > READ_PAGES_MAX:
+        raise ValueError(f"一度に読めるのは{READ_PAGES_MAX}ページまでです。")
+    pages = {page["page_id"]: page for page in load_pages(RAG_SOURCE)}
+    missing = [page_id for page_id in page_ids if page_id not in pages]
+    if missing:
+        raise ValueError(f"対象のページが見つかりません: {', '.join(missing)}")
+    return [pages[page_id] for page_id in page_ids]
+
+
 
 def run_full_context(agent, question: str, model, instructions: str, prompt_template: str):
     """全資料を一括投入し、検索ツールを使わずに回答する。"""
@@ -201,7 +318,17 @@ def run_full_context(agent, question: str, model, instructions: str, prompt_temp
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="エージェントを使わず、講義資料の検索だけを実行する")
     parser.add_argument("query", help="調べたい内容")
+    parser.add_argument("--hybrid", action="store_true", help="宿題（発展）のハイブリッド取得の結果を表示する")
     args = parser.parse_args()
+    if args.hybrid:
+        found = search_hybrid(args.query)
+        print(f"質問に出た用語: {found['query_terms']} / 候補 {found['candidates_considered']} ページ")
+        for i, result in enumerate(found["results"], 1):
+            body = "全文" if "content" in result else "先頭文"
+            print(f"\n{i}. 第{result['lecture']}回 p.{result['page']} {result['title']}"
+                  f"  距離{result['distance']:.3f} {result['reasons']} [{body}]")
+            print(f"   {result.get('preview') or first_sentence(result['content'])}")
+        raise SystemExit(0)
     for i, result in enumerate(search(args.query), 1):
         print(f"\n{'=' * 60}\n検索結果 {i}\n{'=' * 60}")
         print(f"講義: {result['document_title']}")

@@ -22,6 +22,11 @@ RAG_TOP_K = 5
 GRAPH_START_K = 3
 GRAPH_HOPS = 2
 GRAPH_MAX_RESULTS = 10
+# 第5回 宿題（発展）: ハイブリッド取得。入口の件数、返す候補数、全文で渡す件数、read_pagesの上限
+HYBRID_SEED_K = 5
+HYBRID_MAX_RESULTS = 8
+HYBRID_FULL_K = 5  # v1 は 3（ベクトル上位4・5位が先頭文だけになり、Q2 で根拠 p.13 を落とした）
+READ_PAGES_MAX = 4
 EMBEDDING_MODEL = "gemini-embedding-001"
 EMBEDDING_DIMENSIONS = 768
 # 2,048トークンの上限に対し、タスク指定等の分を残す。超過時は切り捨てず停止する。

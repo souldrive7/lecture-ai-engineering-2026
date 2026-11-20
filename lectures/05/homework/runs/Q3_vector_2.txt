@@ -1,0 +1,19 @@
+$ uv run python -m app.agent --trace 第1回の例題チャットボットはなぜRAGで作るのですか。第2回では、知識の追加にファインチューニングよりRAGが効きやすい根拠をどう説明していますか
+[model] gemini-3.5-flash-lite
+第1回の例題チャットボットがRAG（検索拡張生成）で作られている理由は、講義資料などの外部資料を検索し、見つけた内容を基にしてLLMに回答させる仕組みをとっているためです（第1回・PDF p.49）。これにより、大規模講義の質問対応（実例では1万件以上の回答数）において、資料に基づいた正確な回答や根拠の提示が可能になります（第1回・PDF p.19）。
+
+また、第2回では知識の追加においてファインチューニング（FT）よりもRAGが効きやすい（あるいはFTが知識の追加に向かない）根拠として、以下の研究報告などの基本線が挙げられています（第2回・PDF p.47）。
+
+* **Ovadia et al. (2024)**：知識を問う課題において、RAGが一貫して「文書をそのまま学習させるFT」を上回ったこと（第2回・PDF p.47）。
+* **Gekhman et al. (2024)**：新しい知識を含む手本は覚えるのが遅く、覚えるほど誤り（ハルシネーション）が増える傾向にあること（第2回・PDF p.47）。
+
+このように、出力形式や口調といった「振る舞い」の調整には小規模なFTが向く一方で、新しい事実や最新の資料といった「知識」の追加はFTでは非効率であり、検索して渡すRAGの方が効果的であると説明されています（第2回・PDF p.46）。
+
+--- trace ---
+[tool call]   search_materials({'query': '第1回 例題チャットボット RAG'})
+[tool return] search_materials -> {"results": [{"page_id": "lec01-main-p049", "document_id": "lec01-main", "lecture": 1, "document_title": "AIエンジニアリング概論とA…
+[tool call]   search_materials({'query': '第2回 ファインチューニング RAG 知識'})
+[tool return] search_materials -> {"results": [{"page_id": "lec02-main-p047", "document_id": "lec02-main", "lecture": 2, "document_title": "基盤モデルの仕組み", "s…
+[time] 回答完了まで 6.01 秒（検索・埋め込みを含む）
+[usage] 入力 7,041 tokens / 出力 392 tokens / モデル応答 3 回
+[cost] 生成APIの推定コスト: $0.003092 USD（埋め込み・索引構築分は含まない）

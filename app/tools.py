@@ -111,6 +111,40 @@ def browse_tree(node_id: str | None = None) -> str:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
+def search_hybrid(query: str) -> str:
+    """第1〜3回の本講義資料を検索し、関連ページの候補を関連度順に最大8件返す。
+
+    queryに調べたい内容を指定する。質問に複数の話題があれば、話題ごとに分けて呼んでよい。
+    - 候補は、ベクトル検索の上位ページと、それと同じ章・前後のページ、質問に出た用語を言及するページから集め、
+      質問との距離（小さいほど近い）で並べたもの。reasonsに候補に入った理由がある。
+    - ベクトル検索の上位5件はcontentに全文、章・前後・用語だけで加わった候補はpreviewに先頭文だけが入る。
+      previewだけでは根拠にせず、必要なページはread_pagesで全文を読んでから使う。
+    """
+    import sqlite3
+    from google.genai.errors import APIError
+    from app.retrieval import search_hybrid as search
+
+    try:
+        return json.dumps(search(query), ensure_ascii=False)
+    except (ValueError, OSError, sqlite3.Error) as e:
+        return json.dumps({"error": str(e), "results": []}, ensure_ascii=False)
+    except APIError as e:
+        return json.dumps({"error": api_error_message(e.code), "results": []}, ensure_ascii=False)
+
+
+def read_pages(page_ids: list[str]) -> str:
+    """search_hybridが返したページIDを指定し、そのページの全文と引用情報を返す（一度に最大4件）。
+
+    page_idsには "lec03-main-p040" のようなIDを入れる。既に全文を受け取ったページは指定しない。
+    """
+    from app.retrieval import read_pages as read
+
+    try:
+        return json.dumps({"pages": read(page_ids)}, ensure_ascii=False)
+    except (ValueError, OSError) as e:
+        return json.dumps({"error": str(e), "pages": []}, ensure_ascii=False)
+
+
 def search_graph(query: str) -> str:
     """資料を検索し、前後ページ・共通用語をたどって関連ページの本文と引用情報を返す。
 
