@@ -11,7 +11,7 @@ from pydantic_ai import DeferredToolRequests
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models.test import TestModel
 
-from app.agent import agent
+from app.agent import agent, build_lec03_agent
 
 BASE_TOOLS = {"search_materials"}
 
@@ -46,3 +46,40 @@ def test_material_result_reaches_the_model(monkeypatch):
     returns = _parts(result, ToolReturnPart)
     assert returns and returns[0].tool_name == "search_materials"
     assert json.loads(returns[0].content)["results"] == [hit]
+
+
+# 第3回の宿題: 承認付きの学習記録ツール（第5回からは --lec03 のエージェントで使う）
+
+def test_lec03_agent_offers_glossary_and_learning_log():
+    model = TestModel(call_tools=[])
+    build_lec03_agent().run_sync("ツール一覧", model=model)
+    offered = {t.name for t in model.last_model_request_parameters.function_tools}
+    assert offered == {"search_glossary", "get_lecture_summary", "save_learning_log"}
+
+
+def test_learning_log_requires_approval_before_execution():
+    lec03 = build_lec03_agent()
+    model = TestModel(call_tools=["save_learning_log"])
+    with lec03.override(model=model):
+        result = lec03.run_sync("学習記録を保存して")
+
+    assert isinstance(result.output, DeferredToolRequests)
+    assert [call.tool_name for call in result.output.approvals] == ["save_learning_log"]
+    assert not result.output.calls
+
+
+def test_learning_log_can_resume_after_approval(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.tools.LEARNING_LOG_DIR", tmp_path)
+    lec03 = build_lec03_agent()
+    model = TestModel(call_tools=["save_learning_log"])
+    with lec03.override(model=model):
+        first = lec03.run_sync("学習記録を保存して")
+        assert isinstance(first.output, DeferredToolRequests)
+        resumed = lec03.run_sync(
+            None,
+            message_history=first.all_messages(),
+            deferred_tool_results=first.output.build_results(approve_all=True),
+        )
+
+    assert isinstance(resumed.output, str)
+    assert any(p.tool_name == "save_learning_log" for p in _parts(resumed, ToolReturnPart))

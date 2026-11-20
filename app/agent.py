@@ -8,6 +8,7 @@
     uv run python -m app.agent --full-context --trace "LoRAとQLoRAの違いは？"  # 全資料を一度に渡す
     uv run python -m app.agent --mcp --trace "LoRAとは？"        # 第5回: ツールを MCP サーバーから受け取る
     uv run python -m app.agent --mcp --list-tools               # 第5回: モデルに見えるツール一覧（APIキー不要）
+    uv run python -m app.agent --lec03 "学んだことを記録して"    # 第3回の宿題: 用語集＋承認付きの学習記録
 
 エージェント = モデル + ループ + ツール。
 モデルは tools.py の関数を「ツール」として呼び出し、その結果を見て回答を作る。
@@ -21,7 +22,7 @@ from pathlib import Path
 from contextlib import nullcontext
 from time import perf_counter
 
-from pydantic_ai import Agent
+from pydantic_ai import Agent, DeferredToolRequests, DeferredToolResults
 from pydantic_ai.exceptions import ModelHTTPError
 from fastmcp import Client
 from pydantic_ai.mcp import MCPToolset, StdioTransport
@@ -94,6 +95,54 @@ agent = Agent(instructions=INSTRUCTIONS)
 agent.tool_plain(tools.search_materials)
 
 # TODO(第3回 演習): tools.py に make_quiz を作り、ここで登録しよう
+
+# 第3回の宿題: 用語集ツールと、利用者の承認後にだけ実行される学習記録ツールを持つエージェント。
+# 第5回から既定のエージェントは講義資料の検索（search_materials）に替わったので、--lec03 で使う。
+LEC03_INSTRUCTIONS = """\
+あなたはAIエンジニアリング講座（AIE2026）の学習支援エージェントです。
+- 用語や講座に固有のことを答える前に、必ず search_glossary で用語集を確認する。
+- 回の内容を聞かれたら get_lecture_summary を使う。
+- 用語集に見つからないことは、推測で断定せず「用語集にはない」と伝える。
+- 回答の最後に、関係する回（第N回）を示す。
+- 宿題の答えそのものは書かず、考え方のヒントで導く。
+"""
+
+
+def build_lec03_agent() -> Agent:
+    """保存ツールは承認待ちで一度返るため、str と DeferredToolRequests のどちらも出力として受け取る。"""
+    lec03 = Agent(instructions=LEC03_INSTRUCTIONS, output_type=[str, DeferredToolRequests])
+    lec03.tool_plain(tools.search_glossary)
+    lec03.tool_plain(tools.get_lecture_summary)
+    lec03.tool_plain(tools.save_learning_log, requires_approval=True)
+    return lec03
+
+
+def approve_deferred_tools(requests: DeferredToolRequests) -> DeferredToolResults:
+    """DeferredToolRequests の承認待ちツールについて、利用者の確認結果を作る。"""
+    approvals: dict[str, bool] = {}
+    for call in requests.approvals:
+        print(f"\n保存ツールの実行確認: {call.args}")
+        answer = input("この学習記録を保存しますか？ [y/N] ").strip().lower()
+        approvals[call.tool_call_id] = answer in {"y", "yes"}
+
+    if requests.calls:
+        names = ", ".join(call.tool_name for call in requests.calls)
+        raise RuntimeError(f"外部実行が必要な未対応ツールがあります: {names}")
+    return requests.build_results(approvals=approvals)
+
+
+def run_with_approval(target: Agent, question: str, model: GoogleModel):
+    """承認待ちが返ったら確認し、同じ会話を承認結果付きで再開する。"""
+    result = target.run_sync(question, model=model)
+    while isinstance(result.output, DeferredToolRequests):
+        results = approve_deferred_tools(result.output)
+        result = target.run_sync(
+            None,
+            model=model,
+            message_history=result.all_messages(),
+            deferred_tool_results=results,
+        )
+    return result
 
 # 第5回: 使う MCP サーバーの設定ファイル。Claude Desktop や Cursor と同じ "mcpServers" 形式
 MCP_CONFIG = Path(__file__).resolve().parent / "mcp_servers.json"
@@ -208,10 +257,11 @@ def main() -> None:
     modes.add_argument("--tree", action="store_true", help="目次をたどり、必要なページを読んで答える")
     modes.add_argument("--hybrid", action="store_true", help="宿題（発展）: 章・前後・用語で広げ、関連度で絞った候補を段階的に読んで答える")
     modes.add_argument("--full-context", action="store_true", help="検索せず、lectures.jsonの全資料を一度に渡す")
+    modes.add_argument("--lec03", action="store_true", help="第3回の宿題: 用語集と承認付きの学習記録ツールを使う")
     parser.add_argument("--list-tools", action="store_true", help="モデルに見えるツール一覧を表示して終了する（APIキー不要）")
     args = parser.parse_args()
 
-    target = build_mcp_agent() if args.mcp else agent
+    target = build_mcp_agent() if args.mcp else build_lec03_agent() if args.lec03 else agent
     mode = nullcontext()
     if args.tree:
         mode = target.override(instructions=TREE_INSTRUCTIONS, tools=[tools.browse_tree])
@@ -241,6 +291,8 @@ def main() -> None:
                     target, args.question, build_model(),
                     instructions=FULL_CONTEXT_INSTRUCTIONS, prompt_template=FULL_CONTEXT_PROMPT,
                 )
+            elif args.lec03:
+                result = run_with_approval(target, args.question, build_model())
             else:
                 result = target.run_sync(args.question, model=build_model())
         except ModelHTTPError as e:
